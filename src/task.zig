@@ -25,7 +25,7 @@ pub fn Task(comptime args: type) type {
 
         pub fn call(self: *Self, _args: args) void {
             var result = self._call(self._data, _args);
-            self._done.store(true, .Monotonic);
+            self._done.store(true, .Release);
             return result;
         }
 
@@ -43,7 +43,7 @@ pub fn Task(comptime args: type) type {
         }
 
         pub fn is_done(self: Self) bool {
-            return self._done.load(.Monotonic);
+            return self._done.load(.Acquire);
         }
     };
 }
