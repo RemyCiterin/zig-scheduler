@@ -6,6 +6,8 @@ const SaveOutput = @import("task.zig").SaveOutput;
 const Worker = @import("scheduler.zig").Worker;
 const Deque = @import("deque.zig").Deque;
 
+const ThreadPool = @import("scheduler.zig").ThreadPool;
+
 fn fibo_fn(n: usize) usize {
     if (n < 2) return n;
 
@@ -64,38 +66,16 @@ test "final test" {
         }
     };
 
-    const size = 9;
-    var wsq_slice: [size]*Deque(*Task) = undefined;
-    var workers: [size]Worker = undefined;
-
-    comptime var i = 0;
-    inline while (i < size) : (i += 1) {
-        wsq_slice[i] = &try Deque(*Task).init(allocator, 100);
-    }
-
-    var threads: [size]std.Thread = undefined;
-
-    i = 1;
-    inline while (i < size) : (i += 1) {
-        workers[i] = Worker{ .wsq = wsq_slice[0..], .index = i };
-        threads[i] = try std.Thread.spawn(.{}, Worker.work, .{workers[i]});
-    }
-
-    workers[0] = Worker{ .wsq = wsq_slice[0..], .index = 0 };
+    var thread_pool = try ThreadPool.init(allocator, 9, 10000);
 
     var arg: usize = 40;
     var fibo = SaveOutput(compute_fibo, u64).init(compute_fibo{ .arg = arg });
     var closure = Task.from_struct(SaveOutput(compute_fibo, u64), &fibo);
 
-    workers[0].run(&closure);
+    var worker = thread_pool.get_main_worker();
+    worker.run(&closure);
 
     std.debug.print("{}: {}\n", .{ arg, fibo.eval() });
 
-    i = 1;
-    wsq_slice[0].free();
-    inline while (i < size) : (i += 1) {
-        workers[i].stop();
-        wsq_slice[i].free();
-    }
-    //std.debug.print("{}\n", .{fibo_fn(arg)});
+    thread_pool.free();
 }

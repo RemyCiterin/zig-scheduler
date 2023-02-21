@@ -1,4 +1,4 @@
-2753 2493492 1676919410983982752 b8414acb433afc582cf7b192ee4d63f5 /home/remy/Documents/projets/zig-scheduler/src/main.zig
+3014 2493609 1676989641866329493 25e9abf923d03e2145ce27abe835ea1a /home/remy/Documents/projets/zig-scheduler/src/main.zig
 3021 2493486 1676918655968231841 74ee697c9ac8cf18ec97b56beed1316d /home/remy/Documents/projets/zig-scheduler/zig-cache/o/b483e37e3396210d231f76ef87f7db1c/builtin.zig
 5391 4643038 1000000000 99c935b1fadc1095742d1049c16b1f73 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/std.zig
 5444 4643035 1000000000 4850b131f27e1df09384f72e7db58d56 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/special/test_runner.zig
@@ -21,8 +21,8 @@
 7904 4642513 1000000000 f3b7ac95f2f098f334cb93310d8796bd /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/Thread/Mutex.zig
 17188 4643060 1000000000 d31d5393c80a512e00fee584c23bff45 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/testing.zig
 19105 4642770 1000000000 45e8137f667bfff4502578f66d4be5a5 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/meta/trait.zig
-2318 2493497 1676919433681283730 b7954816cb5a06ef628a5a2ad1239c9e /home/remy/Documents/projets/zig-scheduler/src/scheduler.zig
-1920 2493371 1676918340555953738 cc70cec471bac0238364eb09b96167d6 /home/remy/Documents/projets/zig-scheduler/src/task.zig
+4000 2493371 1676989618940321829 4a8c4c854b910ae3dde550af7bd0f46a /home/remy/Documents/projets/zig-scheduler/src/scheduler.zig
+1924 2493495 1676988336872873532 9874130e8f23056b36c09ab57adcdb23 /home/remy/Documents/projets/zig-scheduler/src/task.zig
 6493 4642681 1000000000 2f1ab48b0aec09df8c98184641d2023d /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/io.zig
 118163 4642646 1000000000 5b76f8053fc57aaeea4755fbdbccfc60 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/fs.zig
 41888 4642640 1000000000 53274430079e3e9594bd5428d82b9b4a /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/fs/file.zig

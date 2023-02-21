@@ -26,27 +26,27 @@ pub const Worker = struct {
     }
 
     pub fn stop(self: *Self) void {
-        self.done.store(true, .Monotonic);
+        self.done.store(true, .Release);
     }
 
-    pub fn work(self: Self) void {
-        while (!self.done.load(.Monotonic)) {
+    pub fn work(self: *Self) void {
+        while (!self.done.load(.Acquire)) {
             if (!self.wsq[self.index].empty()) {
                 if (self.wsq[self.index].pop_back()) |task| {
-                    task.call_from(self, self.index);
+                    task.call_from(self.*, self.index);
                     continue;
                 }
             }
 
             if (self.steal()) |task|
-                task.call_from(self, self.index);
+                task.call_from(self.*, self.index);
 
             //std.atomic.spinLoopHint();
         }
     }
 
     pub fn join(self: Self, t: TaskPtr) void {
-        while (!t.is_done()) {
+        main_loop: while (!t.is_done()) {
             if (!self.wsq[self.index].empty()) {
                 if (self.wsq[self.index].pop_back()) |task| {
                     task.call_from(self, self.index);
@@ -57,6 +57,9 @@ pub const Worker = struct {
             if (t.get_caller()) |index| {
                 if (index != self.index) {
                     while (!self.wsq[index].empty() and !t.is_done()) {
+                        if (!self.wsq[self.index].empty())
+                            continue :main_loop;
+
                         if (self.wsq[index].pop_front()) |task| {
                             task.call_from(self, self.index);
                             continue;
@@ -78,5 +81,56 @@ pub const Worker = struct {
 
     pub fn run(self: Self, task: TaskPtr) void {
         task.call_from(self, self.index);
+    }
+};
+
+pub const ThreadPool = struct {
+    const Thread = struct { worker: Worker, deque: Deque(Worker.TaskPtr), thread: ?std.Thread };
+
+    threads: []Thread,
+    allocator: std.mem.Allocator,
+
+    const Self = @This();
+
+    pub fn init(allocator: std.mem.Allocator, number: usize, capacity: usize) !Self {
+        try std.testing.expect(number > 0);
+
+        var deques = try allocator.alloc(*Deque(Worker.TaskPtr), number);
+        var threads = try allocator.alloc(Thread, number);
+
+        var i: usize = 0;
+        while (i < number) : (i += 1) {
+            threads[i].deque = try Deque(Worker.TaskPtr).init(allocator, capacity);
+            threads[i].worker = Worker{ .wsq = deques, .index = i };
+            deques[i] = &threads[i].deque;
+        }
+
+        i = 1;
+        while (i < number) : (i += 1) {
+            threads[i].thread = try std.Thread.spawn(.{}, Worker.work, .{&threads[i].worker});
+        }
+
+        return Self{ .threads = threads, .allocator = allocator };
+    }
+
+    pub fn get_main_worker(self: Self) Worker {
+        return self.threads[0].worker;
+    }
+
+    pub fn free(self: *Self) void {
+        var i: usize = 0;
+        while (i < self.threads.len) : (i += 1)
+            self.threads[i].worker.stop();
+
+        i = 1;
+        while (i < self.threads.len) : (i += 1)
+            self.threads[i].thread.?.join();
+
+        i = 0;
+        while (i < self.threads.len) : (i += 1)
+            self.threads[i].deque.free();
+
+        self.allocator.free(self.threads[0].worker.wsq);
+        self.allocator.free(self.threads);
     }
 };
