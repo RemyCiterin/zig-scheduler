@@ -14,10 +14,10 @@
 45386 4642661 1000000000 70932a11a45b5bf5a34e6339a8941375 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/heap.zig
 107395 4642768 1000000000 fcbd1b4b8725bfa78591bba05d9c2d70 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/mem.zig
 30557 4642767 1000000000 65c11e31a62933504f717be9e26f88d4 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/mem/Allocator.zig
-4418 2493656 1677180564597723746 8e5e1924c295de3337b3ff83b1cb928d /home/remy/Documents/projets/zig-scheduler/src/scheduler.zig
+4418 2493571 1677180623131787736 8e5e1924c295de3337b3ff83b1cb928d /home/remy/Documents/projets/zig-scheduler/src/scheduler.zig
 2956 4642525 1000000000 224c7ee868b5251b2fb3a38a139de8ff /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/atomic.zig
 22970 4642522 1000000000 2809286560339082772669bb49d3d305 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/atomic/Atomic.zig
-4740 2493492 1677096713594283182 512ec5769b7981e3fea5693b57c6c9fc /home/remy/Documents/projets/zig-scheduler/src/deque.zig
+4740 2493492 1677181377266005518 512ec5769b7981e3fea5693b57c6c9fc /home/remy/Documents/projets/zig-scheduler/src/deque.zig
 1920 2493649 1676989798262170255 cc70cec471bac0238364eb09b96167d6 /home/remy/Documents/projets/zig-scheduler/src/task.zig
 41844 4642518 1000000000 809081a3fa77d0f9424a2b6785a9c119 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/Thread.zig
 7904 4642513 1000000000 f3b7ac95f2f098f334cb93310d8796bd /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/Thread/Mutex.zig

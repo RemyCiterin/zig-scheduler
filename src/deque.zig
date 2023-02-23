@@ -103,7 +103,7 @@ pub fn Deque(comptime T: type) type {
 
             if (self.is_empty(old_head, tail)) {
                 self.head.store(old_head, .Monotonic);
-                return .Empty; //return null;
+                return .Empty;
             }
 
             var value = self.load(head);
@@ -113,13 +113,13 @@ pub fn Deque(comptime T: type) type {
                     .compareAndSwap(tail, self.get_next_index(tail), .SeqCst, .Monotonic) != null)
                 {
                     self.head.store(old_head, .Monotonic);
-                    return .Fail; //return null;
+                    return .Fail;
                 }
 
                 self.head.store(old_head, .Monotonic);
             }
 
-            return Self.Result{ .Ok = value }; //return value;
+            return Self.Result{ .Ok = value };
         }
 
         pub fn empty(self: *Self) bool {
@@ -136,15 +136,13 @@ pub fn Deque(comptime T: type) type {
             var head = self.head.load(.Acquire);
 
             if (self.is_empty(head, tail))
-                return .Empty; //return null;
-
+                return .Empty;
             var value = self.load(tail);
 
             if (self.tail
                 .compareAndSwap(tail, self.get_next_index(tail), .SeqCst, .Monotonic) != null)
-                return .Fail; //return null;
-
-            return Self.Result{ .Ok = value }; //return value;
+                return .Fail;
+            return Self.Result{ .Ok = value };
         }
     };
 }
