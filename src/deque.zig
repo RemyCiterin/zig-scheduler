@@ -14,7 +14,7 @@ pub fn Deque(comptime T: type) type {
         buffer: []T,
 
         mutex: std.Thread.Mutex,
-        allocator: std.mem.Allocator,
+        allocator: ?std.mem.Allocator,
 
         comptime index_mode: IndexMode = .Mod,
 
@@ -24,18 +24,22 @@ pub fn Deque(comptime T: type) type {
         const Result = union(enum) { Fail, Empty, Ok: T };
 
         pub fn init(allocator: std.mem.Allocator, capacity: usize) Error!Self {
+            return Self.init_with(try allocator.alloc(T, capacity));
+        }
+
+        pub fn init_with(buffer: []T) Self {
             return Self{
                 .tail = std.atomic.Atomic(usize).init(0),
                 .head = std.atomic.Atomic(usize).init(0),
-                .buffer = try allocator.alloc(T, capacity),
                 .mutex = std.Thread.Mutex{},
-                .allocator = allocator,
                 .index_mode = .Mod,
+                .allocator = null,
+                .buffer = buffer,
             };
         }
 
         pub fn free(self: *Self) void {
-            self.allocator.free(self.buffer);
+            self.allocator.?.free(self.buffer);
         }
 
         fn is_empty(self: Self, head: usize, tail: usize) bool {
