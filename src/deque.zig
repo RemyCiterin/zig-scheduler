@@ -8,22 +8,29 @@ const Error = std.mem.Allocator.Error || error{};
 /// not lock-free but the current thread have the priority over the other threads
 pub fn Deque(comptime T: type) type {
     return struct {
-        top: std.atomic.Atomic(u64),
-        bot: std.atomic.Atomic(u64),
+        head: std.atomic.Atomic(usize),
+        tail: std.atomic.Atomic(usize),
 
         buffer: []T,
 
         mutex: std.Thread.Mutex,
         allocator: std.mem.Allocator,
+
+        comptime index_mode: IndexMode = .Mod,
+
         const Self = @This();
 
-        pub fn init(allocator: std.mem.Allocator, capacity: u64) Error!Self {
+        const IndexMode = enum(u1) { Mod, Abs };
+        const Result = union(enum) { Fail, Empty, Ok: T };
+
+        pub fn init(allocator: std.mem.Allocator, capacity: usize) Error!Self {
             return Self{
-                .bot = std.atomic.Atomic(u64).init(0),
-                .top = std.atomic.Atomic(u64).init(capacity - 1),
+                .tail = std.atomic.Atomic(usize).init(0),
+                .head = std.atomic.Atomic(usize).init(0),
                 .buffer = try allocator.alloc(T, capacity),
                 .mutex = std.Thread.Mutex{},
                 .allocator = allocator,
+                .index_mode = .Mod,
             };
         }
 
@@ -31,93 +38,113 @@ pub fn Deque(comptime T: type) type {
             self.allocator.free(self.buffer);
         }
 
-        fn get_next_index(self: Self, index: u64) u64 {
-            if (index + 1 >= self.buffer.len)
-                return 0;
-            return index + 1;
+        fn is_empty(self: Self, head: usize, tail: usize) bool {
+            return switch (self.index_mode) {
+                .Mod => head <= tail,
+                .Abs => head == tail or self.get_next_index(head) == tail,
+            };
         }
 
-        fn get_previous_index(self: Self, index: u64) u64 {
-            if (index == 0)
-                return @intCast(u64, self.buffer.len - 1);
-            return index - 1;
+        fn load(self: *Self, index: usize) T {
+            return switch (self.index_mode) {
+                .Mod => self.buffer[index % self.buffer.len],
+                .Abs => self.buffer[index],
+            };
+        }
+
+        fn store(self: *Self, index: usize, value: T) void {
+            switch (self.index_mode) {
+                .Mod => {
+                    self.buffer[index % self.buffer.len] = value;
+                },
+                .Abs => {
+                    self.buffer[index] = value;
+                },
+            }
+        }
+
+        fn get_next_index(self: Self, index: usize) usize {
+            return switch (self.index_mode) {
+                .Mod => index +% 1,
+                .Abs => if (index + 1 >= self.buffer.len) 0 else index + 1,
+            };
+        }
+
+        fn get_previous_index(self: Self, index: usize) usize {
+            return switch (self.index_mode) {
+                .Mod => index -% 1,
+                .Abs => if (index == 0) self.buffer.len - 1 else index - 1,
+            };
         }
 
         pub fn push_back(self: *Self, t: T) !void {
-            var top = self.top.load(.Monotonic);
-            var bot = self.bot.load(.Acquire);
+            var old_head = self.head.load(.Monotonic);
+            var head = self.get_next_index(old_head);
+            var tail = self.tail.load(.Acquire);
 
-            top = self.get_next_index(top);
-
-            if (self.is_empty(top, bot))
+            if (self.is_empty(head, tail))
                 return error.OutOfMemory;
 
-            self.buffer[top] = t;
+            self.store(old_head, t);
 
             std.atomic.fence(.Release);
 
-            self.top.store(top, .Monotonic);
+            self.head.store(head, .Monotonic);
         }
 
-        pub fn pop_back(self: *Self) ?T {
-            var old_top = self.top.load(.Monotonic);
-            var top = self.get_previous_index(old_top);
-            self.top.store(top, .Monotonic);
+        pub fn pop_back(self: *Self) Self.Result {
+            var old_head = self.head.load(.Monotonic);
+            var head = self.get_previous_index(old_head);
+            self.head.store(head, .Monotonic);
 
             std.atomic.fence(.SeqCst);
 
-            var bot = self.bot.load(.Monotonic);
+            var tail = self.tail.load(.Monotonic);
 
-            if (self.is_empty(old_top, bot)) {
-                self.top.store(old_top, .Monotonic);
-                return null;
+            if (self.is_empty(old_head, tail)) {
+                self.head.store(old_head, .Monotonic);
+                return .Empty; //return null;
             }
 
-            var value = self.buffer[old_top];
+            var value = self.load(head);
 
-            if (self.is_empty(top, bot)) {
-                if (self.bot
-                    .compareAndSwap(bot, self.get_next_index(bot), .SeqCst, .Monotonic) != null)
+            if (self.is_empty(head, tail)) {
+                if (self.tail
+                    .compareAndSwap(tail, self.get_next_index(tail), .SeqCst, .Monotonic) != null)
                 {
-                    self.top.store(old_top, .Monotonic);
-                    return null;
+                    self.head.store(old_head, .Monotonic);
+                    return .Fail; //return null;
                 }
 
-                self.top.store(old_top, .Monotonic);
+                self.head.store(old_head, .Monotonic);
             }
 
-            return value;
-        }
-
-        fn is_empty(self: Self, top: u64, bot: u64) bool {
-            var cond1 = self.get_next_index(top) == bot;
-            var cond2 = self.get_next_index(self.get_next_index(top)) == bot;
-            return cond1 or cond2;
+            return Self.Result{ .Ok = value }; //return value;
         }
 
         pub fn empty(self: *Self) bool {
-            var bot = self.bot.load(.Monotonic);
-            var top = self.top.load(.Monotonic);
-            return self.is_empty(top, bot);
+            var tail = self.tail.load(.Monotonic);
+            var head = self.head.load(.Monotonic);
+            return self.is_empty(head, tail);
         }
 
-        pub fn pop_front(self: *Self) ?T {
-            var bot = self.bot.load(.Acquire);
+        pub fn pop_front(self: *Self) Self.Result {
+            var tail = self.tail.load(.Acquire);
 
             std.atomic.fence(.SeqCst);
 
-            var top = self.top.load(.Acquire);
+            var head = self.head.load(.Acquire);
 
-            if (self.is_empty(top, bot))
-                return null;
+            if (self.is_empty(head, tail))
+                return .Empty; //return null;
 
-            var value = self.buffer[bot];
+            var value = self.load(tail);
 
-            if (self.bot
-                .compareAndSwap(bot, self.get_next_index(bot), .SeqCst, .Monotonic) != null)
-                return null;
+            if (self.tail
+                .compareAndSwap(tail, self.get_next_index(tail), .SeqCst, .Monotonic) != null)
+                return .Fail; //return null;
 
-            return value;
+            return Self.Result{ .Ok = value }; //return value;
         }
     };
 }

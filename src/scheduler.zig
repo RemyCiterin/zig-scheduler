@@ -16,8 +16,14 @@ pub const Worker = struct {
 
         while (index < self.wsq.len) : (index += 1) {
             if (index != self.index) {
-                if (self.wsq[index].pop_front()) |task| {
-                    return task;
+                while (true) {
+                    switch (self.wsq[index].pop_front()) {
+                        .Ok => |task| {
+                            return task;
+                        },
+                        .Empty => break,
+                        .Fail => continue,
+                    }
                 }
             }
         }
@@ -32,9 +38,12 @@ pub const Worker = struct {
     pub fn work(self: *Self) void {
         while (!self.done.load(.Acquire)) {
             if (!self.wsq[self.index].empty()) {
-                if (self.wsq[self.index].pop_back()) |task| {
-                    task.call_from(self.*, self.index);
-                    continue;
+                switch (self.wsq[self.index].pop_back()) {
+                    .Ok => |task| {
+                        task.call_from(self.*, self.index);
+                        continue;
+                    },
+                    else => {},
                 }
             }
 
@@ -48,9 +57,12 @@ pub const Worker = struct {
     pub fn join(self: Self, t: TaskPtr) void {
         main_loop: while (!t.is_done()) {
             if (!self.wsq[self.index].empty()) {
-                if (self.wsq[self.index].pop_back()) |task| {
-                    task.call_from(self, self.index);
-                    continue;
+                switch (self.wsq[self.index].pop_back()) {
+                    .Ok => |task| {
+                        task.call_from(self, self.index);
+                        continue;
+                    },
+                    else => {},
                 }
             }
 
@@ -60,9 +72,9 @@ pub const Worker = struct {
                         if (!self.wsq[self.index].empty())
                             continue :main_loop;
 
-                        if (self.wsq[index].pop_front()) |task| {
-                            task.call_from(self, self.index);
-                            continue;
+                        switch (self.wsq[index].pop_front()) {
+                            .Ok => |task| task.call_from(self, self.index),
+                            else => {},
                         }
                     }
                 }

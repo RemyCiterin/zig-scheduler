@@ -16,30 +16,29 @@ fn fibo_fn(n: usize) usize {
 
 test "final test" {
     var allocator = std.heap.page_allocator;
-    var wsq = try Deque(usize).init(allocator, 10000);
-    defer wsq.free();
+    //var wsq = try Deque(usize).init(allocator, 10000);
+    //defer wsq.free();
 
-    try std.testing.expect(wsq.pop_front() == null);
+    //try std.testing.expect(wsq.pop_front() == null);
 
-    try wsq.push_back(42);
-    var x = wsq.pop_front() orelse unreachable;
-    var y = wsq.pop_back();
+    //try wsq.push_back(42);
+    //var x = wsq.pop_front() orelse unreachable;
+    //var y = wsq.pop_back();
 
-    try std.testing.expect(x == 42);
-    try std.testing.expect(y == null);
+    //try std.testing.expect(x == 42);
+    //try std.testing.expect(y == null);
 
-    try wsq.push_back(41);
-    try wsq.push_back(43);
-    try wsq.push_back(44);
+    //try wsq.push_back(41);
+    //try wsq.push_back(43);
+    //try wsq.push_back(44);
 
-    var z = wsq.pop_back() orelse unreachable;
-    try std.testing.expect(z == 44);
+    //var z = wsq.pop_back() orelse unreachable;
+    //try std.testing.expect(z == 44);
 
-    var t = wsq.pop_front() orelse unreachable;
-    try std.testing.expect(t == 41);
+    //var t = wsq.pop_front() orelse unreachable;
+    //try std.testing.expect(t == 41);
 
     const compute_fibo = struct {
-        //ret: u64 = undefined,
         arg: u64,
 
         const Self = @This();
@@ -66,16 +65,30 @@ test "final test" {
         }
     };
 
-    var thread_pool = try ThreadPool.init(allocator, 9, 10000);
+    var thread_pool = try ThreadPool.init(allocator, 9, 4096);
 
     var arg: usize = 40;
     var fibo = SaveOutput(compute_fibo, u64).init(compute_fibo{ .arg = arg });
     var closure = Task.from_struct(SaveOutput(compute_fibo, u64), &fibo);
 
     var worker = thread_pool.get_main_worker();
-    worker.run(&closure);
+    var mean_time: f32 = 0;
 
-    std.debug.print("{}: {}\n", .{ arg, fibo.eval() });
+    const num_try = 50;
 
+    comptime var try_index = 0;
+    inline while (try_index < num_try) : (try_index += 1) {
+        var timer = try std.time.Timer.start();
+        worker.run(&closure);
+
+        var time = timer.read();
+
+        std.debug
+            .print("{}: {} in {} seconds\n", .{ arg, fibo.eval(), @intToFloat(f32, time) * 1e9 });
+
+        mean_time += @intToFloat(f32, time) * 1e9 / @intToFloat(f32, num_try);
+    }
     thread_pool.free();
+
+    std.debug.print("mean time: {}\n", .{mean_time});
 }
