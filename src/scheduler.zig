@@ -4,7 +4,7 @@ const std = @import("std");
 
 pub const Worker = struct {
     const Self = @This();
-    const TaskPtr = *TaskType;
+    pub const TaskPtr = *TaskType;
     pub const TaskType = Task(Self);
 
     done: std.atomic.Atomic(bool) = std.atomic.Atomic(bool).init(false),

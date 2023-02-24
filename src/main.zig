@@ -56,20 +56,21 @@ test "final test" {
             var fibo1 = SavedSelf.init(Self{ .arg = self.arg - 1 });
             var fibo2 = SavedSelf.init(Self{ .arg = self.arg - 2 });
 
-            var c1 = Task.from_struct(SavedSelf, &fibo1);
-            worker.spawn(&c1);
+            var t = Task.from_struct(SavedSelf, &fibo1);
+            worker.spawn(&t);
             fibo2.call(worker);
-            worker.join(&c1);
+            worker.join(&t);
 
             return fibo1.eval() + fibo2.eval();
         }
     };
 
-    var thread_pool = try ThreadPool.init(allocator, 9, 4096);
+    var thread_pool = try ThreadPool.init(allocator, 8, 64);
+    defer thread_pool.free();
 
     var arg: usize = 40;
     var fibo = SaveOutput(compute_fibo, u64).init(compute_fibo{ .arg = arg });
-    var closure = Task.from_struct(SaveOutput(compute_fibo, u64), &fibo);
+    var task = Task.from_struct(SaveOutput(compute_fibo, u64), &fibo);
 
     var worker = thread_pool.get_main_worker();
     var mean_time: f32 = 0;
@@ -79,16 +80,14 @@ test "final test" {
     comptime var try_index = 0;
     inline while (try_index < num_try) : (try_index += 1) {
         var timer = try std.time.Timer.start();
-        worker.run(&closure);
+        worker.run(&task);
 
         var time = timer.read();
 
-        std.debug
-            .print("{}: {} in {} seconds\n", .{ arg, fibo.eval(), @intToFloat(f32, time) * 1e9 });
+        var print_info = .{ try_index, arg, fibo.eval(), @intToFloat(f32, time) * 1e-9 };
+        std.debug.print("{}: fibo {} := {} in {} seconds\n", print_info);
 
-        mean_time += @intToFloat(f32, time) * 1e9 / @intToFloat(f32, num_try);
+        mean_time += @intToFloat(f32, time) * 1e-9 / @intToFloat(f32, num_try);
     }
-    thread_pool.free();
-
     std.debug.print("mean time: {}\n", .{mean_time});
 }

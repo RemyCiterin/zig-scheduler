@@ -1,5 +1,12 @@
 const std = @import("std");
 
+fn is_power_of_two(n: anytype) bool {
+    if (n == 1) return true;
+    if (n & 1 == 0)
+        return is_power_of_two(n >> 1);
+    return false;
+}
+
 const Error = std.mem.Allocator.Error || error{};
 
 /// T is the type of element of the queue
@@ -7,7 +14,7 @@ const Error = std.mem.Allocator.Error || error{};
 /// the others can pop front data from the queue
 /// not lock-free but the current thread have the priority over the other threads
 pub fn Deque(comptime T: type) type {
-    return struct {
+    return comptime struct {
         head: std.atomic.Atomic(usize),
         tail: std.atomic.Atomic(usize),
 
@@ -16,26 +23,34 @@ pub fn Deque(comptime T: type) type {
         mutex: std.Thread.Mutex,
         allocator: ?std.mem.Allocator,
 
-        comptime index_mode: IndexMode = .Mod,
+        comptime index_mode: IndexMode = .Abs,
 
         const Self = @This();
 
         const IndexMode = enum(u1) { Mod, Abs };
         const Result = union(enum) { Fail, Empty, Ok: T };
 
-        pub fn init(allocator: std.mem.Allocator, capacity: usize) Error!Self {
-            return Self.init_with(try allocator.alloc(T, capacity));
+        pub fn init(allocator: std.mem.Allocator, capacity: usize) !Self {
+            var result = try Self.init_with(try allocator.alloc(T, capacity));
+            result.allocator = allocator;
+            return result;
         }
 
-        pub fn init_with(buffer: []T) Self {
-            return Self{
+        pub fn init_with(buffer: []T) !Self {
+            var result = Self{
                 .tail = std.atomic.Atomic(usize).init(0),
                 .head = std.atomic.Atomic(usize).init(0),
                 .mutex = std.Thread.Mutex{},
-                .index_mode = .Mod,
                 .allocator = null,
                 .buffer = buffer,
             };
+
+            switch (result.index_mode) {
+                .Mod => try std.testing.expect(is_power_of_two(buffer.len)),
+                else => {},
+            }
+
+            return result;
         }
 
         pub fn free(self: *Self) void {
@@ -51,7 +66,7 @@ pub fn Deque(comptime T: type) type {
 
         fn load(self: *Self, index: usize) T {
             return switch (self.index_mode) {
-                .Mod => self.buffer[index % self.buffer.len],
+                .Mod => self.buffer[index & (self.buffer.len - 1)],
                 .Abs => self.buffer[index],
             };
         }
@@ -59,7 +74,7 @@ pub fn Deque(comptime T: type) type {
         fn store(self: *Self, index: usize, value: T) void {
             switch (self.index_mode) {
                 .Mod => {
-                    self.buffer[index % self.buffer.len] = value;
+                    self.buffer[index & (self.buffer.len - 1)] = value;
                 },
                 .Abs => {
                     self.buffer[index] = value;

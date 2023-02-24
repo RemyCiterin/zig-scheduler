@@ -1,4 +1,4 @@
-2623 2493616 1677175893739299493 8fbe13867ee58e45e08b9d1dcd0bfd2c /home/remy/Documents/projets/zig-scheduler/src/main.zig
+2665 2493743 1677234043517968703 cd16729c8d4e3a2d31ee60e39e180e61 /home/remy/Documents/projets/zig-scheduler/src/main.zig
 3021 2493486 1676918655968231841 74ee697c9ac8cf18ec97b56beed1316d /home/remy/Documents/projets/zig-scheduler/zig-cache/o/b483e37e3396210d231f76ef87f7db1c/builtin.zig
 5391 4643038 1000000000 99c935b1fadc1095742d1049c16b1f73 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/std.zig
 5444 4643035 1000000000 4850b131f27e1df09384f72e7db58d56 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/special/test_runner.zig
@@ -14,10 +14,10 @@
 45386 4642661 1000000000 70932a11a45b5bf5a34e6339a8941375 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/heap.zig
 107395 4642768 1000000000 fcbd1b4b8725bfa78591bba05d9c2d70 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/mem.zig
 30557 4642767 1000000000 65c11e31a62933504f717be9e26f88d4 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/mem/Allocator.zig
-4418 2493571 1677180623131787736 8e5e1924c295de3337b3ff83b1cb928d /home/remy/Documents/projets/zig-scheduler/src/scheduler.zig
+4418 2493736 1677189370174509445 8e5e1924c295de3337b3ff83b1cb928d /home/remy/Documents/projets/zig-scheduler/src/scheduler.zig
 2956 4642525 1000000000 224c7ee868b5251b2fb3a38a139de8ff /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/atomic.zig
 22970 4642522 1000000000 2809286560339082772669bb49d3d305 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/atomic/Atomic.zig
-4743 2493371 1677182062614995186 20b187caf200ce25e21fb41ae8b95854 /home/remy/Documents/projets/zig-scheduler/src/deque.zig
+4818 2493371 1677185451739634204 2dbec247423877a955465def4b101282 /home/remy/Documents/projets/zig-scheduler/src/deque.zig
 1920 2493649 1676989798262170255 cc70cec471bac0238364eb09b96167d6 /home/remy/Documents/projets/zig-scheduler/src/task.zig
 41844 4642518 1000000000 809081a3fa77d0f9424a2b6785a9c119 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/Thread.zig
 7904 4642513 1000000000 f3b7ac95f2f098f334cb93310d8796bd /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/Thread/Mutex.zig
@@ -59,6 +59,7 @@
 800 4642745 1000000000 ab41e71339ff07e47f6edb422a347b91 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/math/isnan.zig
 4266 4642744 1000000000 c52df6d29818c1f364f19266b7598c5a /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/math/isinf.zig
 20705 4642636 1000000000 80a8b853c50a7a490cbfcef6100630cd /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/fmt/errol.zig
+6454 4642752 1000000000 5472dbfd6542719a2f23c0d565670e4e /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/math/log2.zig
 932 4642632 1000000000 b4c3b5276113dacf836baae9d9f94c34 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/event.zig
 68675 4642628 1000000000 c63f2338b6b028fe35892da44a377363 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/event/loop.zig
 12142 4642523 1000000000 960f31a28097b764cc5fbb0f9205d56e /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/atomic/queue.zig
@@ -71,7 +72,6 @@
 39591 4642635 1000000000 7f7af441cf0fe134e5c2d30bd7d6b68e /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/fmt/errol/lookup.zig
 13798 4642508 1000000000 70e9de54160eeb6871485cdaa3755d2e /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/Progress.zig
 53692 4642658 1000000000 a60642142bf23cc7e76febab706572ec /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/heap/general_purpose_allocator.zig
-6454 4642752 1000000000 5472dbfd6542719a2f23c0d565670e4e /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/math/log2.zig
 9090 4642687 1000000000 1180d90b55f45cb947269ff038108378 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/log.zig
 36229 4642859 1000000000 8dd156aa070c627fc25ef402c82b8cb0 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/pdb.zig
 13263 4642559 1000000000 52436f0b55cf344739d85e1b6989e029 /nix/store/a3ppaai0x9jldsvy7x84wm8n1q3q9zdr-zig-0.9.1/lib/zig/std/coff.zig

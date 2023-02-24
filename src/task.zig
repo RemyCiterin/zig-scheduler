@@ -3,7 +3,7 @@ const std = @import("std");
 pub fn Task(comptime args: type) type {
     return struct {
         _data: *u64,
-        _call: fn (*u64, args) void,
+        _call: *const fn (*u64, args) void,
         _done: std.atomic.Atomic(bool) = std.atomic.Atomic(bool).init(false),
         _worker: std.atomic.Atomic(isize) = std.atomic.Atomic(isize).init(-1),
 
