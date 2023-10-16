@@ -10,7 +10,7 @@ pub fn Task(comptime args: type) type {
         const Self = @This();
 
         pub fn call_from(self: *Self, _args: args, worker: usize) void {
-            self._worker.store(@intCast(isize, worker), .Monotonic);
+            self._worker.store(@intCast(worker), .Monotonic);
             self.call(_args);
         }
 
@@ -20,7 +20,7 @@ pub fn Task(comptime args: type) type {
             if (n < 0)
                 return null;
 
-            return @intCast(usize, n);
+            return @intCast(n);
         }
 
         pub fn call(self: *Self, _args: args) void {
@@ -30,11 +30,11 @@ pub fn Task(comptime args: type) type {
         }
 
         pub fn from_struct(comptime T: type, value: *align(8) T) Self {
-            const data = @ptrCast(*u64, value);
+            const data: *u64 = @ptrCast(value);
 
             const transform = struct {
                 fn call(_data: *u64, _args: args) void {
-                    var ptr = @ptrCast(*align(8) T, _data);
+                    var ptr: *align(8) T = @ptrCast(_data);
                     ptr.call(_args);
                 }
             };

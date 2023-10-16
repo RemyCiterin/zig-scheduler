@@ -65,29 +65,15 @@ test "final test" {
         }
     };
 
-    var thread_pool = try ThreadPool.init(allocator, 8, 64);
+    var thread_pool = try ThreadPool.init(allocator, 8, 32);
     defer thread_pool.free();
 
-    var arg: usize = 40;
+    var arg: usize = 42;
     var fibo = SaveOutput(compute_fibo, u64).init(compute_fibo{ .arg = arg });
     var task = Task.from_struct(SaveOutput(compute_fibo, u64), &fibo);
 
     var worker = thread_pool.get_main_worker();
-    var mean_time: f32 = 0;
+    worker.run(&task);
 
-    const num_try = 50;
-
-    comptime var try_index = 0;
-    inline while (try_index < num_try) : (try_index += 1) {
-        var timer = try std.time.Timer.start();
-        worker.run(&task);
-
-        var time = timer.read();
-
-        var print_info = .{ try_index, arg, fibo.eval(), @intToFloat(f32, time) * 1e-9 };
-        std.debug.print("{}: fibo {} := {} in {} seconds\n", print_info);
-
-        mean_time += @intToFloat(f32, time) * 1e-9 / @intToFloat(f32, num_try);
-    }
-    std.debug.print("mean time: {}\n", .{mean_time});
+    try std.testing.expect(fibo.eval() == fibo_fn(arg));
 }
