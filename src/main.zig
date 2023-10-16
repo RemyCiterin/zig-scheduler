@@ -56,7 +56,7 @@ test "final test" {
             var fibo1 = SavedSelf.init(Self{ .arg = self.arg - 1 });
             var fibo2 = SavedSelf.init(Self{ .arg = self.arg - 2 });
 
-            var t = Task.from_struct(SavedSelf, &fibo1);
+            var t = Task.init(SavedSelf, &fibo1);
             worker.spawn(&t);
             fibo2.call(worker);
             worker.join(&t);
@@ -70,7 +70,7 @@ test "final test" {
 
     var arg: usize = 42;
     var fibo = SaveOutput(compute_fibo, u64).init(compute_fibo{ .arg = arg });
-    var task = Task.from_struct(SaveOutput(compute_fibo, u64), &fibo);
+    var task = Task.init(SaveOutput(compute_fibo, u64), &fibo);
 
     var worker = thread_pool.get_main_worker();
     worker.run(&task);

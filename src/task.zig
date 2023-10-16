@@ -29,7 +29,7 @@ pub fn Task(comptime args: type) type {
             return result;
         }
 
-        pub fn from_struct(comptime T: type, value: *align(8) T) Self {
+        pub fn init(comptime T: type, value: *align(8) T) Self {
             const data: *u64 = @ptrCast(value);
 
             const transform = struct {
