@@ -24,6 +24,12 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const module = b.createModule(.{
+        .source_file = .{ .path = "src/scheduler.zig" },
+    });
+
+    try b.module.put(b.dupe("scheduler"), module);
+
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
     // running `zig build`).
