@@ -23,13 +23,15 @@ const compute_fibo = struct {
         return ret;
     }
 
-    pub fn call(self: *Self, worker: Worker) u64 {
+    pub fn call(self: *Self, worker: Worker) void {
         if (self.arg < 2) {
-            return self.arg;
+            self.ret = self.arg;
+            return;
         }
 
-        if (self.arg < 2) {
-            return fibo_fn(self.arg);
+        if (self.arg < 20) {
+            self.ret = fibo_fn(self.arg);
+            return;
         }
 
         var fibo1 = Self{ .arg = self.arg - 1 };
@@ -40,7 +42,7 @@ const compute_fibo = struct {
         fibo2.call(worker);
         worker.join(&t);
 
-        return fibo1.eval() + fibo2.eval();
+        self.ret = fibo1.eval() + fibo2.eval();
     }
 };
 
