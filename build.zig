@@ -3,7 +3,7 @@ const std = @import("std");
 // Although this function looks imperative, note that its job is to
 // declaratively construct a build graph that will be executed by an external
 // runner.
-pub fn build(b: *std.Build) void {
+pub fn build(b: *std.Build) !void {
     // Standard target options allows the person running `zig build` to choose
     // what target to build for. Here we do not override the defaults, which
     // means any target is allowed, and the default is native. Other options
@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "zig-scheduler",
+        .name = "scheduler",
         // In this case the main source file is merely a path, however, in more
         // complicated build scripts, this could be a generated file.
         .root_source_file = .{ .path = "src/main.zig" },
@@ -28,7 +28,7 @@ pub fn build(b: *std.Build) void {
         .source_file = .{ .path = "src/scheduler.zig" },
     });
 
-    try b.module.put(b.dupe("scheduler"), module);
+    try b.modules.put(b.dupe("scheduler"), module);
 
     // This declares intent for the library to be installed into the standard
     // location when the user invokes the "install" step (the default step when
