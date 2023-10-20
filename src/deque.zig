@@ -31,7 +31,7 @@ pub fn StaticDeque(comptime T: type) type {
         const Result = union(enum) { Fail, Empty, Ok: T };
 
         pub fn init(allocator: std.mem.Allocator, capacity: usize) !Self {
-            var buffer = try allocator.alloc(T, capacity);
+            var buffer = try allocator.alloc(T, if (capacity < 4) 4 else capacity);
 
             var result = Self{
                 .tail = std.atomic.Atomic(usize).init(0),
