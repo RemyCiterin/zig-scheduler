@@ -1,5 +1,5 @@
-const Task = @import("task.zig").Task;
-const Deque = @import("deque.zig").Deque;
+pub const Task = @import("task.zig").Task;
+pub const Deque = @import("deque.zig").Deque;
 const std = @import("std");
 
 pub const Worker = struct {
