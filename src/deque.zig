@@ -13,7 +13,7 @@ const Error = std.mem.Allocator.Error || error{};
 /// invariant: only one thread can push back and pop back data,
 /// the others can pop front data from the queue
 /// not lock-free but the current thread have the priority over the other threads
-pub fn Deque(comptime T: type) type {
+pub fn StaticDeque(comptime T: type) type {
     return comptime struct {
         head: std.atomic.Atomic(usize),
         tail: std.atomic.Atomic(usize),
@@ -21,7 +21,7 @@ pub fn Deque(comptime T: type) type {
         buffer: []T,
 
         mutex: std.Thread.Mutex,
-        allocator: ?std.mem.Allocator,
+        allocator: std.mem.Allocator,
 
         comptime index_mode: IndexMode = .Abs,
 
@@ -31,17 +31,13 @@ pub fn Deque(comptime T: type) type {
         const Result = union(enum) { Fail, Empty, Ok: T };
 
         pub fn init(allocator: std.mem.Allocator, capacity: usize) !Self {
-            var result = try Self.init_with(try allocator.alloc(T, capacity));
-            result.allocator = allocator;
-            return result;
-        }
+            var buffer = try allocator.alloc(T, capacity);
 
-        pub fn init_with(buffer: []T) !Self {
             var result = Self{
                 .tail = std.atomic.Atomic(usize).init(0),
                 .head = std.atomic.Atomic(usize).init(0),
                 .mutex = std.Thread.Mutex{},
-                .allocator = null,
+                .allocator = allocator,
                 .buffer = buffer,
             };
 
@@ -53,14 +49,14 @@ pub fn Deque(comptime T: type) type {
             return result;
         }
 
-        pub fn free(self: *Self) void {
-            self.allocator.?.free(self.buffer);
+        pub fn deinit(self: *Self) void {
+            self.allocator.free(self.buffer);
         }
 
-        fn is_empty(self: Self, head: usize, tail: usize) bool {
+        fn isEmpty(self: Self, head: usize, tail: usize) bool {
             return switch (self.index_mode) {
                 .Mod => head <= tail,
-                .Abs => head == tail or self.get_next_index(head) == tail,
+                .Abs => head == tail or self.nextIndex(head) == tail,
             };
         }
 
@@ -82,26 +78,26 @@ pub fn Deque(comptime T: type) type {
             }
         }
 
-        fn get_next_index(self: Self, index: usize) usize {
+        fn nextIndex(self: Self, index: usize) usize {
             return switch (self.index_mode) {
                 .Mod => index +% 1,
                 .Abs => if (index + 1 >= self.buffer.len) 0 else index + 1,
             };
         }
 
-        fn get_previous_index(self: Self, index: usize) usize {
+        fn prevIndex(self: Self, index: usize) usize {
             return switch (self.index_mode) {
                 .Mod => index -% 1,
                 .Abs => if (index == 0) self.buffer.len - 1 else index - 1,
             };
         }
 
-        pub fn push_back(self: *Self, t: T) !void {
+        pub fn pushBack(self: *Self, t: T) !void {
             var old_head = self.head.load(.Monotonic);
-            var head = self.get_next_index(old_head);
+            var head = self.nextIndex(old_head);
             var tail = self.tail.load(.Acquire);
 
-            if (self.is_empty(head, tail))
+            if (self.isEmpty(head, tail))
                 return error.OutOfMemory;
 
             self.store(old_head, t);
@@ -111,25 +107,25 @@ pub fn Deque(comptime T: type) type {
             self.head.store(head, .Monotonic);
         }
 
-        pub fn pop_back(self: *Self) Self.Result {
+        pub fn tryPopBack(self: *Self) Self.Result {
             var old_head = self.head.load(.Monotonic);
-            var head = self.get_previous_index(old_head);
+            var head = self.prevIndex(old_head);
             self.head.store(head, .Monotonic);
 
             std.atomic.fence(.SeqCst);
 
             var tail = self.tail.load(.Monotonic);
 
-            if (self.is_empty(old_head, tail)) {
+            if (self.isEmpty(old_head, tail)) {
                 self.head.store(old_head, .Monotonic);
                 return .Empty;
             }
 
             var value = self.load(head);
 
-            if (self.is_empty(head, tail)) {
+            if (self.isEmpty(head, tail)) {
                 if (self.tail
-                    .compareAndSwap(tail, self.get_next_index(tail), .SeqCst, .Monotonic) != null)
+                    .compareAndSwap(tail, self.nextIndex(tail), .SeqCst, .Monotonic) != null)
                 {
                     self.head.store(old_head, .Monotonic);
                     return .Fail;
@@ -144,24 +140,92 @@ pub fn Deque(comptime T: type) type {
         pub fn empty(self: *Self) bool {
             var tail = self.tail.load(.Monotonic);
             var head = self.head.load(.Monotonic);
-            return self.is_empty(head, tail);
+            return self.isEmpty(head, tail);
         }
 
-        pub fn pop_front(self: *Self) Self.Result {
+        pub fn tryPopFront(self: *Self) Self.Result {
             var tail = self.tail.load(.Acquire);
 
             std.atomic.fence(.SeqCst);
 
             var head = self.head.load(.Acquire);
 
-            if (self.is_empty(head, tail))
+            if (self.isEmpty(head, tail))
                 return .Empty;
             var value = self.load(tail);
 
             if (self.tail
-                .compareAndSwap(tail, self.get_next_index(tail), .SeqCst, .Monotonic) != null)
+                .compareAndSwap(tail, self.nextIndex(tail), .SeqCst, .Monotonic) != null)
                 return .Fail;
             return Self.Result{ .Ok = value };
+        }
+    };
+}
+
+pub fn Deque(comptime T: type) type {
+    return struct {
+        lock: std.Thread.RwLock = .{},
+        deque: StaticDeque(T),
+
+        pub const Result = StaticDeque(T).Result;
+
+        const Self = @This();
+
+        pub fn init(allocator: std.mem.Allocator, capacity: usize) !Self {
+            return .{
+                .deque = try StaticDeque(T).init(allocator, capacity),
+            };
+        }
+
+        pub fn deinit(self: *Self) void {
+            self.deque.deinit();
+        }
+
+        pub fn pushBack(self: *Self, value: T) !void {
+            self.deque.pushBack(value) catch |err| {
+                switch (err) {
+                    error.OutOfMemory => {
+                        self.lock.lock();
+                        defer self.lock.unlock();
+
+                        var deque = try StaticDeque(T).init(
+                            self.deque.allocator,
+                            2 * self.deque.buffer.len,
+                        );
+
+                        defer {
+                            self.deque.deinit();
+                            self.deque = deque;
+                        }
+
+                        while (true) {
+                            switch (self.deque.tryPopFront()) {
+                                .Ok => |t| try deque.pushBack(t),
+                                .Fail => unreachable, // RwLock !!!
+                                .Empty => break,
+                            }
+                        }
+
+                        try deque.pushBack(value);
+                    },
+                }
+            };
+        }
+
+        pub fn empty(self: *Self) bool {
+            self.lock.lockShared();
+            defer self.lock.unlockShared();
+            return self.deque.empty();
+        }
+
+        pub fn tryPopBack(self: *Self) Result {
+            return self.deque.tryPopBack();
+        }
+
+        pub fn tryPopFront(self: *Self) Result {
+            self.lock.lockShared();
+            defer self.lock.unlockShared();
+            return self.deque.tryPopFront();
         }
     };
 }

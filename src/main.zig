@@ -65,14 +65,14 @@ test "final test" {
         }
     };
 
-    var thread_pool = try ThreadPool.init(allocator, 8, 32);
-    defer thread_pool.free();
+    var thread_pool = try ThreadPool.init(allocator, 8, 4);
+    defer thread_pool.deinit();
 
-    var arg: usize = 42;
+    var arg: usize = 20;
     var fibo = SaveOutput(compute_fibo, u64).init(compute_fibo{ .arg = arg });
     var task = Task.init(SaveOutput(compute_fibo, u64), &fibo);
 
-    var worker = thread_pool.get_main_worker();
+    var worker = thread_pool.getMainWorker();
     worker.run(&task);
 
     try std.testing.expect(fibo.eval() == fibo_fn(arg));

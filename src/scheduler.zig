@@ -17,7 +17,7 @@ pub const Worker = struct {
         while (index < self.wsq.len) : (index += 1) {
             if (index != self.index) {
                 while (true) {
-                    switch (self.wsq[index].pop_front()) {
+                    switch (self.wsq[index].tryPopFront()) {
                         .Ok => |task| {
                             return task;
                         },
@@ -38,7 +38,7 @@ pub const Worker = struct {
     pub fn work(self: *Self) void {
         while (!self.done.load(.Acquire)) {
             if (!self.wsq[self.index].empty()) {
-                switch (self.wsq[self.index].pop_back()) {
+                switch (self.wsq[self.index].tryPopBack()) {
                     .Ok => |task| {
                         task.call_from(self.*, self.index);
                         continue;
@@ -57,7 +57,7 @@ pub const Worker = struct {
     pub fn join(self: Self, t: TaskPtr) void {
         main_loop: while (!t.is_done()) {
             if (!self.wsq[self.index].empty()) {
-                switch (self.wsq[self.index].pop_back()) {
+                switch (self.wsq[self.index].tryPopBack()) {
                     .Ok => |task| {
                         task.call_from(self, self.index);
                         continue;
@@ -72,7 +72,7 @@ pub const Worker = struct {
                         if (!self.wsq[self.index].empty())
                             continue :main_loop;
 
-                        switch (self.wsq[index].pop_front()) {
+                        switch (self.wsq[index].tryPopFront()) {
                             .Ok => |task| task.call_from(self, self.index),
                             else => {},
                         }
@@ -88,7 +88,7 @@ pub const Worker = struct {
     }
 
     pub fn spawn(self: Self, task: TaskPtr) void {
-        self.wsq[self.index].push_back(task) catch @panic("out of memory (push_back)");
+        self.wsq[self.index].pushBack(task) catch @panic("out of memory (pushBack)");
     }
 
     pub fn run(self: Self, task: TaskPtr) void {
@@ -125,11 +125,11 @@ pub const ThreadPool = struct {
         return Self{ .threads = threads, .allocator = allocator };
     }
 
-    pub fn get_main_worker(self: Self) Worker {
+    pub fn getMainWorker(self: Self) Worker {
         return self.threads[0].worker;
     }
 
-    pub fn free(self: *Self) void {
+    pub fn deinit(self: *Self) void {
         var i: usize = 0;
         while (i < self.threads.len) : (i += 1)
             self.threads[i].worker.stop();
@@ -140,7 +140,7 @@ pub const ThreadPool = struct {
 
         i = 0;
         while (i < self.threads.len) : (i += 1)
-            self.threads[i].deque.free();
+            self.threads[i].deque.deinit();
 
         self.allocator.free(self.threads[0].worker.wsq);
         self.allocator.free(self.threads);
