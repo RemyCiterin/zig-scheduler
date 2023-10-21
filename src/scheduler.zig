@@ -2,6 +2,8 @@ pub const Task = @import("task.zig").Task;
 pub const Deque = @import("deque.zig").Deque;
 const std = @import("std");
 
+pub const Intrusive = @import("intrusive.zig");
+
 pub const Worker = struct {
     const Self = @This();
     pub const TaskPtr = *TaskType;
