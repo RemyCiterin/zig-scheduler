@@ -15,6 +15,7 @@ fn fibo_fn(n: usize) usize {
 }
 
 test "final test" {
+    _ = @import("intrusive.zig");
     var allocator = std.heap.page_allocator;
     //var wsq = try Deque(usize).init(allocator, 10000);
     //defer wsq.free();
